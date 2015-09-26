@@ -26,9 +26,9 @@ def setup_gpios():
     gpio.setup(gpio_out_led_confirm, GPIO.OUT)
 
 def wait_for_confirmation():
-    def blink_confirm:
+    def blink_confirm():
         gpio.add_event_detect(gpio_in_confirm, gpio.RISING, bouncetime=200)
-        until gpio.event_detected(gpio_in_confirm):
+        while not gpio.event_detected(gpio_in_confirm):
             gpio.output(gpio_out_led_confirm, TRUE)
             sleep(500)
             gpio.output(gpio_out_led_confirm, FALSE)
@@ -48,6 +48,7 @@ def run_warninglamp(time, confirm):
 
 def sound_horn(pattern, time):
     #TODO
+    pass
 
 def eval_doorbell(channel):
     print('Edge detected on channel %s, eval_doorbell.'%channel)
@@ -59,8 +60,9 @@ def eval_doorbell(channel):
 
 def eval_phone():
     #TODO
-    #while phone_ringing(): 
+    #while phone_ringing():
     #run_warninglamp(1)
+    pass
 
 
 gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback=eval_doorbell, bouncetime=200)
