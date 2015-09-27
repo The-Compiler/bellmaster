@@ -17,8 +17,8 @@ gpio_out_led_confirm = 32
 
 def setup_gpios():
     gpio.setup(gpio_in_doorbell, gpio.IN, pull_up_down=gpio.PUD_UP)
-    gpio.setup(gpio_in_lampoverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
-    gpio.setup(gpio_in_hornoverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
+    gpio.setup(gpio_in_lampoverride, gpio.IN, pull_up_down=gpio.PUD_UP)#FIXME
+    gpio.setup(gpio_in_hornoverride, gpio.IN, pull_up_down=gpio.PUD_UP)#FIXME
     gpio.setup(gpio_in_printoverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
     gpio.setup(gpio_in_confirm, gpio.IN, pull_up_down=gpio.PUD_DOWN)
 
@@ -37,7 +37,8 @@ def wait_for_confirmation():
             gpio.output(gpio_out_led_confirm, False)
             sleep(500)
         gpio.remove_event_detect(gpio_in_confirm)
-        threading.Thread(target=lambda: blink_confirm())
+        confirmthread = threading.Thread(target=lambda: blink_confirm())
+        confirmthread.start()
     gpio.wait_for_edge(gpio_in_confirm, gpio.RISING)
     print('got confirmation')
 
@@ -59,7 +60,8 @@ def sound_horn(pattern, time):
 def eval_doorbell(channel):
     print('Edge detected on channel %s, eval_doorbell.'%channel)
 #    gpio.output(gpio_out_led_doorbell, True)
-    threading.Thread(target=lambda: run_warninglamp(10, 0))
+    warninglampthread = threading.Thread(target=lambda: run_warninglamp(3, 0))
+    warninglampthread.start()
 #    gpio.wait_for_edge(gpio_in_doorbell, gpio.RISING)
 #    gpio.output(gpio_out_led_doorbell, False)
 
