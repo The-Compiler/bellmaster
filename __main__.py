@@ -5,25 +5,25 @@ from time import sleep
 gpio.setmode(gpio.BOARD)
 
 gpio_in_doorbell = 37
-gpio_in_lampoverride = 35
-gpio_in_hornoverride = 33
-gpio_in_printoverride = 31
+gpio_in_lampoverride = 33
+gpio_in_belloverride = 31
+gpio_in_printoverride = 29
 gpio_in_confirm = 29
 
 gpio_out_warninglamp = 40
-gpio_out_horn = 38
+gpio_out_bell = 38
 gpio_out_led_doorbell = 36
 gpio_out_led_confirm = 32
 
 def setup_gpios():
     gpio.setup(gpio_in_doorbell, gpio.IN, pull_up_down=gpio.PUD_UP)
-    gpio.setup(gpio_in_lampoverride, gpio.IN, pull_up_down=gpio.PUD_UP)#FIXME
-    gpio.setup(gpio_in_hornoverride, gpio.IN, pull_up_down=gpio.PUD_UP)#FIXME
+    gpio.setup(gpio_in_lampoverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
+    gpio.setup(gpio_in_belloverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
     gpio.setup(gpio_in_printoverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
     gpio.setup(gpio_in_confirm, gpio.IN, pull_up_down=gpio.PUD_DOWN)
 
     gpio.setup(gpio_out_warninglamp, gpio.OUT)
-    gpio.setup(gpio_out_horn, gpio.OUT)
+    gpio.setup(gpio_out_bell, gpio.OUT)
     gpio.setup(gpio_out_led_doorbell, gpio.OUT)
     gpio.setup(gpio_out_led_confirm, gpio.OUT)
 
@@ -51,19 +51,26 @@ def run_warninglamp(time, confirm):
         if confirm:
             wait_for_confirmation()
         gpio.output(gpio_out_warninglamp, False)
+    else:
+        print('lampoverride detected')
     print('ran warninglamp')
 
-def sound_horn(pattern, time):
-    #TODO
-    pass
+def run_bell(time):
+    print('run_bell %s.'%time)
+    if gpio.input(gpio_in_belloverride):
+        gpio.output(gpio_out_bell, True)
+        sleep(time)
+        gpio.output(gpio_out_bell, False)
+    else:
+        print('bell detected')
+    print('ran bell')
 
 def eval_doorbell(channel):
     print('Edge detected on channel %s, eval_doorbell.'%channel)
-#    gpio.output(gpio_out_led_doorbell, True)
     warninglampthread = threading.Thread(target=lambda: run_warninglamp(3, 0))
+    bellthread = threading.Thread(target=lambda: run_bell(1))
     warninglampthread.start()
-#    gpio.wait_for_edge(gpio_in_doorbell, gpio.RISING)
-#    gpio.output(gpio_out_led_doorbell, False)
+    bellthread.start()
 
 
 def eval_phone():
@@ -74,7 +81,7 @@ def eval_phone():
 
 setup_gpios()
 gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback=eval_doorbell, bouncetime=200)
-eval_doorbell(-1)#FIXME
+#eval_doorbell(-1)#FIXME
 while True:
     gpio.output(gpio_out_led_confirm, not gpio.input(gpio_in_doorbell))
     sleep(.1)
