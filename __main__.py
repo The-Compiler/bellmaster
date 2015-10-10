@@ -62,7 +62,7 @@ def run_bell(time):
         sleep(time)
         gpio.output(gpio_out_bell, False)
     else:
-        print('bell detected')
+        print('belloverride detected')
     print('ran bell')
 
 def eval_doorbell(channel):
