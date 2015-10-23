@@ -17,7 +17,7 @@ gpio_out_led_confirm = 32
 
 def setup_gpios():
     gpio.setup(gpio_in_doorbell, gpio.IN, pull_up_down=gpio.PUD_UP)
-    gpio.setup(gpio_in_lampoverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
+    gpio.setup(gpio_in_lampoverride, gpio.IN, pull_up_down=gpio.PUD_UP)#FIXME
     gpio.setup(gpio_in_belloverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
     gpio.setup(gpio_in_printoverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
     gpio.setup(gpio_in_confirm, gpio.IN, pull_up_down=gpio.PUD_DOWN)
@@ -30,7 +30,7 @@ def setup_gpios():
 def wait_for_confirmation():
     print('waiting for confirmation')
     def blink_confirm():
-        gpio.add_event_detect(gpio_in_confirm, gpio.RISING, bouncetime=200)
+        gpio.add_event_detect(gpio_in_confirm, gpio.RISING, bouncetime=20)
         while not gpio.event_detected(gpio_in_confirm):
             gpio.output(gpio_out_led_confirm, True)
             sleep(500)
@@ -67,7 +67,17 @@ def run_bell(time):
 
 def eval_doorbell(channel):
     print('Edge detected on channel %s, eval_doorbell.'%channel)
-    warninglampthread = threading.Thread(target=lambda: run_warninglamp(3, 0))
+    #sleep(0.0003)
+    debounce_runs = 0
+    debounce_false_score = 0
+    while debounce_runs < 10:
+        if gpio.input(channel):
+            debounce_false_score += 1
+        debounce_runs += 1
+    if debounce_false_score > 5:
+        print('Signal on channel %s did not pass primitive debouncing.'%channel)
+        return
+    warninglampthread = threading.Thread(target=lambda: run_warninglamp(10, 0))
     bellthread = threading.Thread(target=lambda: run_bell(1))
     warninglampthread.start()
     bellthread.start()
@@ -80,7 +90,7 @@ def eval_phone():
     pass
 
 setup_gpios()
-gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback=eval_doorbell, bouncetime=200)
+gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback=eval_doorbell, bouncetime=1)
 #eval_doorbell(-1)#FIXME
 while True:
     gpio.output(gpio_out_led_confirm, not gpio.input(gpio_in_doorbell))
