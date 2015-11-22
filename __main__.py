@@ -17,7 +17,7 @@ gpio_out_led_confirm = 32
 
 def setup_gpios():
     gpio.setup(gpio_in_doorbell, gpio.IN, pull_up_down=gpio.PUD_UP)
-    gpio.setup(gpio_in_lampoverride, gpio.IN, pull_up_down=gpio.PUD_UP)#FIXME
+    gpio.setup(gpio_in_lampoverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
     gpio.setup(gpio_in_belloverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
     gpio.setup(gpio_in_printoverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
     gpio.setup(gpio_in_confirm, gpio.IN, pull_up_down=gpio.PUD_DOWN)
@@ -78,7 +78,7 @@ def eval_doorbell(channel):
         print('Signal on channel %s did not pass primitive debouncing.'%channel)
         return
     warninglampthread = threading.Thread(target=lambda: run_warninglamp(10, 0))
-    bellthread = threading.Thread(target=lambda: run_bell(1))
+    bellthread = threading.Thread(target=lambda: run_bell(3))
     warninglampthread.start()
     bellthread.start()
 
