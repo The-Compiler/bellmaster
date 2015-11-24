@@ -1,8 +1,10 @@
 from twisted.internet import reactor, protocol
 import re
+import RPi.GPIO as gpio
 
 class EchoClient(protocol.Protocol):
-    """Once connected, send a message, then print the result."""
+
+    ringing = False
 
     def connectionMade(self):
         self.transport.write("hello, world!")
@@ -30,13 +32,14 @@ class EchoClient(protocol.Protocol):
         pass
 
     def handle_ring(self):
-        self.ringing =  True
+        EchoClient.ringing =  True
         gpio.output(gpio_out_warninglamp, True)
         return
 
     def handle_disconnect(self):
-        if self.ringing:
+        if EchoClient.ringing:
             gpio.output(gpio_out_warninglamp, False)
+            EchoClient.ringing = False
         return
 
 class EchoFactory(protocol.ClientFactory):
@@ -57,10 +60,14 @@ def main():
     reactor.connectTCP("fritz.hq.ccczh.ch", 1012, f)
     reactor.run()
 
+#def __init__(self, gpio):
+#    global gpio_out_warninglamp
+#    gpio_out_warninglamp = gpio
+#    main()
+
 # this only runs if the module was *not* imported
 if __name__ == '__main__':
-    import RPi.GPIO as gpio
-    gpio.setmode(gpio.BOARD)
     gpio_out_warninglamp = 40
+    gpio.setmode(gpio.BOARD)
     gpio.setup(gpio_out_warninglamp, gpio.OUT)
     main()

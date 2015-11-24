@@ -83,14 +83,7 @@ def eval_doorbell(channel):
     warninglampthread.start()
     bellthread.start()
 
-
-def eval_phone():
-    #TODO
-    #while phone_ringing():
-    #run_warninglamp(1)
-    pass
-
 setup_gpios()
 gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback=eval_doorbell, bouncetime=1)
-fritzlampthread=threading.Thread(target=lambda: fritzlamp.main())
-fritzlampthread.start()
+fritzlamp.gpio_out_warninglamp = gpio_out_warninglamp
+fritzlamp.main()
