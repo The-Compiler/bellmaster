@@ -1,6 +1,7 @@
 import RPi.GPIO as gpio
 import threading
 from time import sleep
+import fritzlamp
 
 gpio.setmode(gpio.BOARD)
 
@@ -91,8 +92,5 @@ def eval_phone():
 
 setup_gpios()
 gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback=eval_doorbell, bouncetime=1)
-#eval_doorbell(-1)#FIXME
-while True:
-    gpio.output(gpio_out_led_confirm, not gpio.input(gpio_in_doorbell))
-    sleep(.1)
-
+fritzlampthread=threading.Thread(target=lambda: fritzlamp.main())
+fritzlampthread.start()
