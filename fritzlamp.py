@@ -1,6 +1,5 @@
 from twisted.internet import reactor, protocol
 import re
-import RPi.GPIO as gpio
 
 class EchoClient(protocol.Protocol):
     """Once connected, send a message, then print the result."""
@@ -14,9 +13,9 @@ class EchoClient(protocol.Protocol):
         data_split = re.split(";",data)
         action = data_split[1]
         action_handlers = {
-            "CALL": self.handle_call
-            "RING": self.handle_ring
-            "DISCONECT": self.handle_disconect
+            "CALL": self.handle_call,
+            "RING": self.handle_ring,
+            "DISCONNECT": self.handle_disconnect
         }
         try:
             func = action_handlers[action]
@@ -27,18 +26,17 @@ class EchoClient(protocol.Protocol):
     def connectionLost(self, reason):
         print "connection lost", reason
 
-    def handle_call():
+    def handle_call(self):
         pass
 
-    def handle_ring():
+    def handle_ring(self):
         self.ringing =  True
         gpio.output(gpio_out_warninglamp, True)
         return
 
-    def handle_disconect():
+    def handle_disconnect(self):
         if self.ringing:
-            gpio.output(gpio_out_bell, False)
-
+            gpio.output(gpio_out_warninglamp, False)
         return
 
 class EchoFactory(protocol.ClientFactory):
@@ -61,4 +59,8 @@ def main():
 
 # this only runs if the module was *not* imported
 if __name__ == '__main__':
+    import RPi.GPIO as gpio
+    gpio.setmode(gpio.BOARD)
+    gpio_out_warninglamp = 40
+    gpio.setup(gpio_out_warninglamp, gpio.OUT)
     main()
