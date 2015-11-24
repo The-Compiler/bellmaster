@@ -6,7 +6,7 @@ class EchoClient(protocol.Protocol):
 
     def connectionMade(self):
         self.transport.write("hello, world!")
-        print "connected"
+        print "connected to fritz.hq.ccczh.ch"
 
     def dataReceived(self, data):
         data = data.strip()
