@@ -1,88 +1,146 @@
 import RPi.GPIO as gpio
-import threading
 from time import sleep
-import fritzlamp
+from twisted.internet import reactor, protocol
+import re
+
 
 gpio.setmode(gpio.BOARD)
 
 gpio_in_doorbell = 37
 gpio_in_lampoverride = 33
-gpio_in_belloverride = 31
+gpio_in_beeperoverride = 31
 gpio_in_printoverride = 29
 gpio_in_confirm = 29
 
 gpio_out_warninglamp = 40
-gpio_out_bell = 38
+gpio_out_beeper = 38
 gpio_out_led_doorbell = 36
 gpio_out_led_confirm = 32
 
-def setup_gpios():
-    gpio.setup(gpio_in_doorbell, gpio.IN, pull_up_down=gpio.PUD_UP)
-    gpio.setup(gpio_in_lampoverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
-    gpio.setup(gpio_in_belloverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
-    gpio.setup(gpio_in_printoverride, gpio.IN, pull_up_down=gpio.PUD_DOWN)
-    gpio.setup(gpio_in_confirm, gpio.IN, pull_up_down=gpio.PUD_DOWN)
 
+def SetupGpios():
+    gpio.setup(gpio_in_doorbell, gpio.IN, pull_up_down = gpio.PUD_UP)
+    gpio.setup(gpio_in_lampoverride, gpio.IN, pull_up_down = gpio.PUD_DOWN)
+    gpio.setup(gpio_in_beeperoverride, gpio.IN, pull_up_down = gpio.PUD_DOWN)
+    gpio.setup(gpio_in_printoverride, gpio.IN, pull_up_down = gpio.PUD_DOWN)
+    gpio.setup(gpio_in_confirm, gpio.IN, pull_up_down = gpio.PUD_DOWN)
+    
     gpio.setup(gpio_out_warninglamp, gpio.OUT)
-    gpio.setup(gpio_out_bell, gpio.OUT)
+    gpio.setup(gpio_out_beeper, gpio.OUT)
     gpio.setup(gpio_out_led_doorbell, gpio.OUT)
     gpio.setup(gpio_out_led_confirm, gpio.OUT)
 
-def wait_for_confirmation():
-    print('waiting for confirmation')
-    def blink_confirm():
-        gpio.add_event_detect(gpio_in_confirm, gpio.RISING, bouncetime=20)
-        while not gpio.event_detected(gpio_in_confirm):
-            gpio.output(gpio_out_led_confirm, True)
-            sleep(500)
-            gpio.output(gpio_out_led_confirm, False)
-            sleep(500)
-        gpio.remove_event_detect(gpio_in_confirm)
-        confirmthread = threading.Thread(target=lambda: blink_confirm())
-        confirmthread.start()
-    gpio.wait_for_edge(gpio_in_confirm, gpio.RISING)
-    print('got confirmation')
+
+class OutputController:
+    def __init__(self, gpio_pin_id):
+        self._current_output_state = False
+        self._current_reasons = set()
+        
+        self._gpio_pin_id = gpio_pin_id
+    
+    def _check_output(self):
+        if self._current_output_state and not self._current_reasons:
+            self._set_output(False)
+        elif not self._current_output_state and self._current_reasons:
+            self._set_output(True)
+    
+    def _set_output(self, state):
+        gpio.output(self._gpio_pin_id, state)
+    
+    def addReason(self, reason):
+        self._current_reasons.add(reason)
+        self._check_output()
+    
+    def removeReason(self, reason):
+        self._current_reasons.remove(reason)
+        self._check_output()
 
 
-def run_warninglamp(time, confirm):
-    print('run_warninglamp %s.'%time)
-    if gpio.input(gpio_in_lampoverride):
-        gpio.output(gpio_out_warninglamp, True)
-        sleep(time)
-        if confirm:
-            wait_for_confirmation()
-        gpio.output(gpio_out_warninglamp, False)
-    else:
-        print('lampoverride detected')
-    print('ran warninglamp')
+lampOutputController = OutputController(gpio_out_warninglamp)
+beeperOutputController = OutputController(gpio_out_beeper)
 
-def run_bell(time):
-    print('run_bell %s.'%time)
-    if gpio.input(gpio_in_belloverride):
-        gpio.output(gpio_out_bell, True)
-        sleep(time)
-        gpio.output(gpio_out_bell, False)
-    else:
-        print('belloverride detected')
-    print('ran bell')
 
-def eval_doorbell(channel):
-    print('Edge detected on channel %s, eval_doorbell.'%channel)
-    debounce_runs = 0
-    debounce_false_score = 0
-    while debounce_runs < 10:
+def handleCall(call_id):
+    lampOutputController.addReason(('call', call_id))
+    sleep(5)
+    lampOutputController.removeReason(('call', call_id))
+
+
+class fritzClient(protocol.Protocol):
+    def connectionMade(self):
+        print "connected to fritz.hq.ccczh.ch"
+    
+    def dataReceived(self, data):
+        data = data.strip()
+        data_split = re.split(";", data)
+        action = data_split[1]
+        action_handlers = {
+            "CALL": self._handleCall,
+            "RING": self._handleRing,
+            "DISCONNECT": self._handleDisconnect,
+            "CONNECT": self._handleConnect,
+        }
+        try:
+            func = action_handlers[action]
+        except KeyError:
+            return
+        func()
+    
+    def connectionLost(self, reason):
+        print "connection lost", reason
+    
+    def _handleCall(self):
+        pass
+    
+    def _handleRing(self):
+        pass
+    
+    def _handleDisconnect(self):
+        pass
+    
+    def _handleConnect(self):
+        pass
+
+
+class FritzFactory(protocol.ClientFactory):
+    protocol = fritzClient
+    
+    def clientConnectionFailed(self, connector, reason):
+        print "Connection failed - reconnecting", reason
+        connect_to_fritzbox()
+    
+    def clientConnectionLost(self, connector, reason):
+        print "Connection lost - reconnecting", reason
+        connect_to_fritzbox()
+
+
+def connect_to_fritzbox(f):
+    reactor.connectTCP("fritz.hq.ccczh.ch", 1012, f)
+
+
+def handleDoorbell():
+    lampOutputController.addReason('doorbell')
+
+    reactor.callLater(10, lambda: lampOutputController.removeReason('doorbell'))
+
+
+def evalDoorbell(channel):
+    print('Edge detected on channel %s, eval_doorbell.' % channel)
+    pcRuns = 0
+    pcFalseScore = 0
+    while pcRuns < 10:
         if gpio.input(channel):
-            debounce_false_score += 1
-        debounce_runs += 1
-    if debounce_false_score > 5:
-        print('Signal on channel %s did not pass primitive positive-confirmation.'%channel)
+            pcFalseScore += 1
+        pcRuns += 1
+    if pcFalseScore > 5:
+        print('Signal on channel %s did not pass primitive positive-confirmation.' % channel)
         return
-    warninglampthread = threading.Thread(target=lambda: run_warninglamp(10, 0))
-    bellthread = threading.Thread(target=lambda: run_bell(3))
-    warninglampthread.start()
-    bellthread.start()
 
-setup_gpios()
-gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback=eval_doorbell, bouncetime=1)
-fritzlamp.gpio_out_warninglamp = gpio_out_warninglamp
-fritzlamp.main()
+    handleDoorbell()
+
+
+SetupGpios()
+gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback = evalDoorbell, bouncetime = 1)
+f = FritzFactory()
+connect_to_fritzbox(f)
+reactor.run()
