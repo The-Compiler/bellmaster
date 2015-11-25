@@ -7,7 +7,6 @@ class EchoClient(protocol.Protocol):
     ringing = False
 
     def connectionMade(self):
-        self.transport.write("hello, world!")
         print "connected to fritz.hq.ccczh.ch"
 
     def dataReceived(self, data):
@@ -17,7 +16,8 @@ class EchoClient(protocol.Protocol):
         action_handlers = {
             "CALL": self.handle_call,
             "RING": self.handle_ring,
-            "DISCONNECT": self.handle_disconnect
+            "DISCONNECT": self.handle_disconnect,
+            "CONNECT": self.handle_connect,
         }
         try:
             func = action_handlers[action]
@@ -41,23 +41,29 @@ class EchoClient(protocol.Protocol):
             gpio.output(gpio_out_warninglamp, False)
             EchoClient.ringing = False
         return
+    
+    def handle_connect(self):
+        pass
 
 class EchoFactory(protocol.ClientFactory):
     protocol = EchoClient
 
     def clientConnectionFailed(self, connector, reason):
-        print "Connection failed - goodbye!", reason
-        reactor.stop()
+        print "Connection failed - reconnecting", reason
+        connect_to_fritzbox()
 
     def clientConnectionLost(self, connector, reason):
-        print "Connection lost - goodbye!", reason
-        reactor.stop()
+        print "Connection lost - reconnecting", reason
+        connect_to_fritzbox()
 
+
+def connect_to_fritzbox():
+    reactor.connectTCP("fritz.hq.ccczh.ch", 1012, f)
 
 # this connects the protocol to the local fritzbox
 def main():
     f = EchoFactory()
-    reactor.connectTCP("fritz.hq.ccczh.ch", 1012, f)
+    connect_to_fritzbox()
     reactor.run()
 
 #def __init__(self, gpio):
