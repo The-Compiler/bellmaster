@@ -43,16 +43,20 @@ class OutputController:
             self._set_output(False)
         elif not self._current_output_state and self._current_reasons:
             self._set_output(True)
-    
+        print 'checked output'
+
+
     def _set_output(self, state):
         gpio.output(self._gpio_pin_id, state)
     
     def addReason(self, reason):
         self._current_reasons.add(reason)
+        print 'added reason ', reason
         self._check_output()
     
     def removeReason(self, reason):
         self._current_reasons.remove(reason)
+        print 'removed reason', reason
         self._check_output()
 
 
@@ -61,6 +65,7 @@ beeperOutputController = OutputController(gpio_out_beeper)
 
 
 def handleCall(call_id):
+    print 'handling call with id ', call_id
     lampOutputController.addReason(('call', call_id))
     sleep(5)
     lampOutputController.removeReason(('call', call_id))
@@ -116,12 +121,16 @@ class FritzFactory(protocol.ClientFactory):
 
 def connect_to_fritzbox(f):
     reactor.connectTCP("fritz.hq.ccczh.ch", 1012, f)
+    print 'initiated connection with fritz.hq.ccczh.ch'
 
 
 def handleDoorbell():
     lampOutputController.addReason('doorbell')
 
-    reactor.callLater(10, lambda: lampOutputController.removeReason('doorbell'))
+    def _turnOffLamp():
+        lampOutputController.removeReason('doorbell')
+
+    reactor.callLater(10, _turnOffLamp)
 
 
 def evalDoorbell(channel):
