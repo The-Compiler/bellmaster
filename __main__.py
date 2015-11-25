@@ -75,7 +75,7 @@ def eval_doorbell(channel):
             debounce_false_score += 1
         debounce_runs += 1
     if debounce_false_score > 5:
-        print('Signal on channel %s did not pass primitive debouncing.'%channel)
+        print('Signal on channel %s did not pass primitive positive-confirmation.'%channel)
         return
     warninglampthread = threading.Thread(target=lambda: run_warninglamp(10, 0))
     bellthread = threading.Thread(target=lambda: run_bell(3))

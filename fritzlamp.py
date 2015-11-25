@@ -32,7 +32,7 @@ class EchoClient(protocol.Protocol):
         pass
 
     def handle_ring(self):
-        EchoClient.ringing =  True
+        EchoClient.ringing = True
         gpio.output(gpio_out_warninglamp, True)
         return
 
