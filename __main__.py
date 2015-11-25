@@ -7,9 +7,9 @@ import re
 gpio.setmode(gpio.BOARD)
 
 gpio_in_doorbell = 37
-gpio_in_lampoverride = 33
-gpio_in_beeperoverride = 31
-gpio_in_printoverride = 29
+gpio_in_lampenable = 33
+gpio_in_beeperenable = 31
+gpio_in_printenable = 29
 gpio_in_confirm = 29
 
 gpio_out_warninglamp = 40
@@ -20,8 +20,8 @@ gpio_out_led_confirm = 32
 
 def SetupGpios():
     gpio.setup(gpio_in_doorbell, gpio.IN, pull_up_down = gpio.PUD_UP)
-    gpio.setup(gpio_in_lampoverride, gpio.IN, pull_up_down = gpio.PUD_DOWN)
-    gpio.setup(gpio_in_beeperoverride, gpio.IN, pull_up_down = gpio.PUD_DOWN)
+    gpio.setup(gpio_in_lampenable, gpio.IN, pull_up_down = gpio.PUD_DOWN)
+    gpio.setup(gpio_in_beeperenable, gpio.IN, pull_up_down = gpio.PUD_DOWN)
     gpio.setup(gpio_in_printoverride, gpio.IN, pull_up_down = gpio.PUD_DOWN)
     gpio.setup(gpio_in_confirm, gpio.IN, pull_up_down = gpio.PUD_DOWN)
     
@@ -168,19 +168,19 @@ def evalDoorbell(channel):
 
 
 def checkLampEnable():
-    _state = gpio.input(gpio_in_lampoverride)
+    _state = gpio.input(gpio_in_lampenable)
     lampOutputController.enabled(_state)
 
 def checkBeeperEnable():
-    _state = gpio.input(gpio_in_beeperoverride)
+    _state = gpio.input(gpio_in_beeperenable)
     beeperOutputController.enabled(_state)
 
 
 SetupGpios()
 gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback = evalDoorbell, bouncetime = 1)
 
-gpio.add_event_detect(gpio_in_lampoverride, gpio.BOTH, callback = checkLampEnable, bouncetime = 1)
-gpio.add_event_detect(gpio_in_beeperoverride, gpio.BOTH, callback = checkBeeperEnable, bouncetime = 1)
+gpio.add_event_detect(gpio_in_lampenable, gpio.BOTH, callback = checkLampEnable, bouncetime = 1)
+gpio.add_event_detect(gpio_in_beeperenable, gpio.BOTH, callback = checkBeeperEnable, bouncetime = 1)
 
 f = FritzFactory()
 connectToFritzbox(f)
