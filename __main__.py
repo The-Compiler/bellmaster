@@ -134,9 +134,8 @@ def evalDoorbell(channel):
         pcRuns += 1
     if pcFalseScore > 5:
         print('Signal on channel %s did not pass primitive positive-confirmation.' % channel)
-        return
-
-    reactor.callFromThread(handleDoorbell)
+    else:
+        reactor.callFromThread(handleDoorbell)
 
 
 SetupGpios()
