@@ -39,24 +39,28 @@ class OutputController:
         self._gpio_pin_id = gpio_pin_id
     
     def _check_output(self):
+        print 'checking output'
+        print 'self._current_output_state', self._current_output_state, 'self._current_reasons', self._current_reasons
         if self._current_output_state and not self._current_reasons:
+            print 'setting output to False'
             self._set_output(False)
         elif not self._current_output_state and self._current_reasons:
+            print 'setting output to True'
             self._set_output(True)
-        print 'checked output'
+
 
 
     def _set_output(self, state):
         gpio.output(self._gpio_pin_id, state)
     
     def addReason(self, reason):
+        print 'adding reason ', reason
         self._current_reasons.add(reason)
-        print 'added reason ', reason
         self._check_output()
     
     def removeReason(self, reason):
+        print 'removing reason', reason
         self._current_reasons.remove(reason)
-        print 'removed reason', reason
         self._check_output()
 
 
@@ -120,8 +124,9 @@ class FritzFactory(protocol.ClientFactory):
 
 
 def connect_to_fritzbox(f):
+    print 'initiating connection with fritz.hq.ccczh.ch'
     reactor.connectTCP("fritz.hq.ccczh.ch", 1012, f)
-    print 'initiated connection with fritz.hq.ccczh.ch'
+
 
 
 def handleDoorbell():
