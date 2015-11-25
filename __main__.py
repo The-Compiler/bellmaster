@@ -136,7 +136,7 @@ def evalDoorbell(channel):
         print('Signal on channel %s did not pass primitive positive-confirmation.' % channel)
         return
 
-    handleDoorbell()
+    reactor.callFromThread(handleDoorbell)
 
 
 SetupGpios()
