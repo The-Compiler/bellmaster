@@ -37,14 +37,20 @@ class OutputController:
         self._current_reasons = set()
         
         self._gpio_pin_id = gpio_pin_id
+        self._shouldBeOn = False
+        self.enabled = True
     
-    def _check_output(self):
+    def check_output(self):
         print 'checking output'
-        print 'self._current_output_state', self._current_output_state, 'self._current_reasons', self._current_reasons
-        if self._current_output_state and not self._current_reasons:
+
+        self._shouldBeOn = self._current_reasons and self.enabled
+
+        print 'self._current_output_state', self._current_output_state, 'self._current_reasons', self._current_reasons, 'self._shouldBeOn', self._shouldBeOn
+
+        if self._current_output_state and not self._shouldBeOn:
             print 'setting output to False'
             self._set_output(False)
-        elif not self._current_output_state and self._current_reasons:
+        elif not self._current_output_state and self._shouldBeOn:
             print 'setting output to True'
             self._set_output(True)
 
@@ -57,12 +63,15 @@ class OutputController:
     def addReason(self, reason):
         print 'adding reason ', reason
         self._current_reasons.add(reason)
-        self._check_output()
+        self.check_output()
     
     def removeReason(self, reason):
         print 'removing reason', reason
         self._current_reasons.remove(reason)
-        self._check_output()
+        self.check_output()
+
+    def enableOutput(self, state):
+        self.enabled = state
 
 
 lampOutputController = OutputController(gpio_out_warninglamp)
@@ -95,7 +104,8 @@ class fritzClient(protocol.Protocol):
         except KeyError:
             return
         func()
-    
+
+
     def connectionLost(self, reason):
         print "connection lost", reason
     
@@ -117,14 +127,14 @@ class FritzFactory(protocol.ClientFactory):
     
     def clientConnectionFailed(self, connector, reason):
         print "Connection failed - reconnecting", reason
-        connect_to_fritzbox()
+        connectToFritzbox()
     
     def clientConnectionLost(self, connector, reason):
         print "Connection lost - reconnecting", reason
-        connect_to_fritzbox()
+        connectToFritzbox()
 
 
-def connect_to_fritzbox(f):
+def connectToFritzbox(f):
     print 'initiating connection with fritz.hq.ccczh.ch'
     reactor.connectTCP("fritz.hq.ccczh.ch", 1012, f)
 
@@ -132,10 +142,14 @@ def connect_to_fritzbox(f):
 
 def handleDoorbell():
     lampOutputController.addReason('doorbell')
+    beeperOutputController.addReason('doorbell')
 
     def _turnOffLamp():
         lampOutputController.removeReason('doorbell')
+    def _turnOffBeeper():
+        beeperOutputController.removeReason('doorbell')
 
+    reactor.callLater(5, _turnOffBeeper)
     reactor.callLater(10, _turnOffLamp)
 
 
@@ -153,8 +167,21 @@ def evalDoorbell(channel):
         reactor.callFromThread(handleDoorbell)
 
 
+def checkLampEnable():
+    _state = gpio.input(gpio_in_lampoverride)
+    lampOutputController.enabled(_state)
+
+def checkBeeperEnable():
+    _state = gpio.input(gpio_in_beeperoverride)
+    beeperOutputController.enabled(_state)
+
+
 SetupGpios()
 gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback = evalDoorbell, bouncetime = 1)
+
+gpio.add_event_detect(gpio_in_lampoverride, gpio.BOTH, callback = checkLampEnable, bouncetime = 1)
+gpio.add_event_detect(gpio_in_beeperoverride, gpio.BOTH, callback = checkBeeperEnable, bouncetime = 1)
+
 f = FritzFactory()
-connect_to_fritzbox(f)
+connectToFritzbox(f)
 reactor.run()
