@@ -52,6 +52,7 @@ class OutputController:
 
     def _set_output(self, state):
         gpio.output(self._gpio_pin_id, state)
+        self._current_output_state = state
     
     def addReason(self, reason):
         print 'adding reason ', reason
