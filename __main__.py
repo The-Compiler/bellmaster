@@ -68,7 +68,6 @@ def run_bell(time):
 
 def eval_doorbell(channel):
     print('Edge detected on channel %s, eval_doorbell.'%channel)
-    #sleep(0.0003)
     debounce_runs = 0
     debounce_false_score = 0
     while debounce_runs < 10:
