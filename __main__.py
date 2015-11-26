@@ -22,7 +22,7 @@ def SetupGpios():
     gpio.setup(gpio_in_doorbell, gpio.IN, pull_up_down = gpio.PUD_UP)
     gpio.setup(gpio_in_lampenable, gpio.IN, pull_up_down = gpio.PUD_DOWN)
     gpio.setup(gpio_in_beeperenable, gpio.IN, pull_up_down = gpio.PUD_DOWN)
-    gpio.setup(gpio_in_printoverride, gpio.IN, pull_up_down = gpio.PUD_DOWN)
+    gpio.setup(gpio_in_printenable, gpio.IN, pull_up_down = gpio.PUD_DOWN)
     gpio.setup(gpio_in_confirm, gpio.IN, pull_up_down = gpio.PUD_DOWN)
     
     gpio.setup(gpio_out_warninglamp, gpio.OUT)
@@ -78,14 +78,20 @@ lampOutputController = OutputController(gpio_out_warninglamp)
 beeperOutputController = OutputController(gpio_out_beeper)
 
 
-def handleCall(call_id):
-    print 'handling call with id ', call_id
-    lampOutputController.addReason(('call', call_id))
-    sleep(5)
-    lampOutputController.removeReason(('call', call_id))
+def handleCall(connectionId, action):
+    print 'handling call with id ', connectionId, '. Action:', action
+    if action == 'RING':
+        lampOutputController.addReason(('call', connectionId))
+    elif action == 'DISCONNECT' or 'CONNECT':
+        print 'trying to remove call', connectionId, 'from reasons'
+        try:
+            lampOutputController.removeReason(('call', connectionId))
+        except KeyError:
+            print 'Warning: could not remove call ', connectionId, 'from reasons'
 
 
 class fritzClient(protocol.Protocol):
+
     def connectionMade(self):
         print "connected to fritz.hq.ccczh.ch"
     
@@ -93,33 +99,12 @@ class fritzClient(protocol.Protocol):
         data = data.strip()
         data_split = re.split(";", data)
         action = data_split[1]
-        action_handlers = {
-            "CALL": self._handleCall,
-            "RING": self._handleRing,
-            "DISCONNECT": self._handleDisconnect,
-            "CONNECT": self._handleConnect,
-        }
-        try:
-            func = action_handlers[action]
-        except KeyError:
-            return
-        func()
+        connectionId = data_split[2]
+        handleCall(connectionId, action)
 
 
     def connectionLost(self, reason):
         print "connection lost", reason
-    
-    def _handleCall(self):
-        pass
-    
-    def _handleRing(self):
-        pass
-    
-    def _handleDisconnect(self):
-        pass
-    
-    def _handleConnect(self):
-        pass
 
 
 class FritzFactory(protocol.ClientFactory):
@@ -162,7 +147,7 @@ def evalDoorbell(channel):
             pcFalseScore += 1
         pcRuns += 1
     if pcFalseScore > 5:
-        print('Signal on channel %s did not pass primitive positive-confirmation.' % channel)
+        print('Signal on channel %s did not pass primitive positive-confirmation-checking.' % channel)
     else:
         reactor.callFromThread(handleDoorbell)
 
