@@ -70,7 +70,7 @@ class OutputController:
         self._current_reasons.remove(reason)
         self.check_output()
 
-    def enableOutput(self, state):
+    def setEnable(self, state):
         self.enabled = state
 
 
@@ -154,11 +154,11 @@ def evalDoorbell(channel):
 
 def checkLampEnable(channel):
     _state = gpio.input(gpio_in_lampenable)
-    lampOutputController.enabled(_state)
+    lampOutputController.setEnable(_state)
 
 def checkBeeperEnable(channel):
     _state = gpio.input(gpio_in_beeperenable)
-    beeperOutputController.enabled(_state)
+    beeperOutputController.setEnable(_state)
 
 
 SetupGpios()
