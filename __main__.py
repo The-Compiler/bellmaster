@@ -126,6 +126,7 @@ class FritzFactory(protocol.ClientFactory):
 def connectToFritzbox(f):
     print 'initiating connection with fritz.hq.ccczh.ch'
     reactor.connectTCP("fritz.hq.ccczh.ch", 1012, f)
+    sleep(1)
 
 
 
