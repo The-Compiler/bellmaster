@@ -177,4 +177,4 @@ gpio.add_event_detect(gpio_in_beeperenable, gpio.BOTH, callback = lambda channel
 f = FritzFactory()
 connectToFritzbox(f)
 reactor.run()
-atexit.register(cleanupGpios())
+atexit.register(cleanupGpios)
