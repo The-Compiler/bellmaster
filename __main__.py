@@ -116,11 +116,11 @@ class FritzFactory(protocol.ClientFactory):
     
     def clientConnectionFailed(self, connector, reason):
         print "Connection failed - reconnecting", reason
-        connectToFritzbox()
+        connectToFritzbox(f)
     
     def clientConnectionLost(self, connector, reason):
         print "Connection lost - reconnecting", reason
-        connectToFritzbox()
+        connectToFritzbox(f)
 
 
 def connectToFritzbox(f):
