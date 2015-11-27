@@ -157,6 +157,7 @@ def evalDoorbell(channel):
 
 def checkLampEnable(channel):
     print('detected edge on channel %s, checkLampEnable' % channel )
+    sleep(.01)
     _state = gpio.input(gpio_in_lampenable)
     print 'trying lampOutputController.setEnable(', _state, ')'
     lampOutputController.setEnable(_state)
@@ -164,6 +165,7 @@ def checkLampEnable(channel):
 
 def checkBeeperEnable(channel):
     print('detected edge on channel %s, checkBeeperEnable' % channel)
+    sleep(.01)
     _state = gpio.input(gpio_in_beeperenable)
     print 'trying beeperOutputController.setEnable(', _state, ')'
     beeperOutputController.setEnable(_state)
