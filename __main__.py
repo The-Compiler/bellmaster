@@ -34,13 +34,9 @@ def setupGpios():
 
 def cleanupGpios():
     print 'Cleanung up GPIOs'
-    for i in range(1, 41):
-        try:
-            gpio.output(i, False)
-        except KeyError:
-            pass
-        except ValueError:
-            pass
+    for i in [gpio_out_warninglamp, gpio_out_beeper]:
+        gpio.output(i, False)
+
 
 
 class OutputController:
