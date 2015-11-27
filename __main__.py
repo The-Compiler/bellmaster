@@ -19,6 +19,7 @@ gpio_out_led_confirm = 32
 
 
 def setupGpios():
+    print 'Setting up GPIOs'
     gpio.setup(gpio_in_doorbell, gpio.IN, pull_up_down = gpio.PUD_UP)
     gpio.setup(gpio_in_lampenable, gpio.IN, pull_up_down = gpio.PUD_DOWN)
     gpio.setup(gpio_in_beeperenable, gpio.IN, pull_up_down = gpio.PUD_DOWN)
@@ -32,6 +33,7 @@ def setupGpios():
 
 
 def cleanupGpios():
+    print 'Cleanung up GPIOs'
     for i in range(0, 41):
         try:
             gpio.output(i, False)
