@@ -88,6 +88,9 @@ def handleCall(connectionId, action):
             lampOutputController.removeReason(('call', connectionId))
         except KeyError:
             print 'Warning: could not remove call ', connectionId, 'from reasons. (action=', action, ')'
+    else:
+        pass
+
 
 
 class fritzClient(protocol.Protocol):
