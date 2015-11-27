@@ -72,6 +72,7 @@ class OutputController:
 
     def setEnable(self, state):
         self.enabled = state
+        self.check_output()
 
 
 lampOutputController = OutputController(gpio_out_warninglamp)
