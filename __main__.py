@@ -87,7 +87,7 @@ def handleCall(connectionId, action):
         try:
             lampOutputController.removeReason(('call', connectionId))
         except KeyError:
-            print 'Warning: could not remove call ', connectionId, 'from reasons'
+            print 'Warning: could not remove call ', connectionId, 'from reasons. (action=', action, ')'
 
 
 class fritzClient(protocol.Protocol):
@@ -152,11 +152,11 @@ def evalDoorbell(channel):
         reactor.callFromThread(handleDoorbell)
 
 
-def checkLampEnable():
+def checkLampEnable(channel):
     _state = gpio.input(gpio_in_lampenable)
     lampOutputController.enabled(_state)
 
-def checkBeeperEnable():
+def checkBeeperEnable(channel):
     _state = gpio.input(gpio_in_beeperenable)
     beeperOutputController.enabled(_state)
 
