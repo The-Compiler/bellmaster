@@ -1,7 +1,7 @@
 import RPi.GPIO as gpio
 from time import sleep
 from twisted.internet import reactor, protocol
-import re
+import re, atexit
 
 
 gpio.setmode(gpio.BOARD)
@@ -18,7 +18,7 @@ gpio_out_led_doorbell = 36
 gpio_out_led_confirm = 32
 
 
-def SetupGpios():
+def setupGpios():
     gpio.setup(gpio_in_doorbell, gpio.IN, pull_up_down = gpio.PUD_UP)
     gpio.setup(gpio_in_lampenable, gpio.IN, pull_up_down = gpio.PUD_DOWN)
     gpio.setup(gpio_in_beeperenable, gpio.IN, pull_up_down = gpio.PUD_DOWN)
@@ -29,6 +29,14 @@ def SetupGpios():
     gpio.setup(gpio_out_beeper, gpio.OUT)
     gpio.setup(gpio_out_led_doorbell, gpio.OUT)
     gpio.setup(gpio_out_led_confirm, gpio.OUT)
+
+
+def cleanupGpios():
+    for i in range(0, 41):
+        try:
+            gpio.output(i, False)
+        except KeyError:
+            pass
 
 
 class OutputController:
@@ -53,8 +61,6 @@ class OutputController:
         elif not self._current_output_state and self._shouldBeOn:
             print 'setting output to True'
             self._set_output(True)
-
-
 
     def _set_output(self, state):
         gpio.output(self._gpio_pin_id, state)
@@ -93,9 +99,7 @@ def handleCall(connectionId, action):
         pass
 
 
-
 class fritzClient(protocol.Protocol):
-
     def connectionMade(self):
         print "connected to fritz.hq.ccczh.ch"
     
@@ -105,7 +109,6 @@ class fritzClient(protocol.Protocol):
         action = data_split[1]
         connectionId = data_split[2]
         handleCall(connectionId, action)
-
 
     def connectionLost(self, reason):
         print "connection lost", reason
@@ -129,13 +132,13 @@ def connectToFritzbox(f):
     sleep(1)
 
 
-
 def handleDoorbell():
     lampOutputController.addReason('doorbell')
     beeperOutputController.addReason('doorbell')
 
     def _turnOffLamp():
         lampOutputController.removeReason('doorbell')
+
     def _turnOffBeeper():
         beeperOutputController.removeReason('doorbell')
 
@@ -163,7 +166,9 @@ def checkOutputEnable(channel, controller):
     _state = gpio.input(channel)
     controller.setEnable(_state)
 
-SetupGpios()
+
+setupGpios()
+cleanupGpios()
 gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback = evalDoorbell, bouncetime = 1)
 
 gpio.add_event_detect(gpio_in_lampenable, gpio.BOTH, callback = lambda channel: checkOutputEnable(channel, lampOutputController))
@@ -172,3 +177,4 @@ gpio.add_event_detect(gpio_in_beeperenable, gpio.BOTH, callback = lambda channel
 f = FritzFactory()
 connectToFritzbox(f)
 reactor.run()
+atexit.register(cleanupGpios())
