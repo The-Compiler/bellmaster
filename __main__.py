@@ -34,10 +34,12 @@ def setupGpios():
 
 def cleanupGpios():
     print 'Cleanung up GPIOs'
-    for i in range(0, 41):
+    for i in range(1, 41):
         try:
             gpio.output(i, False)
         except KeyError:
+            pass
+        except ValueError:
             pass
 
 
