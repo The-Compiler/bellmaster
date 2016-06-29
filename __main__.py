@@ -33,7 +33,7 @@ def setupGpios():
 
 
 def cleanupGpios():
-    print 'Cleanung up GPIOs'
+    print 'Cleaning up GPIOs'
     for i in [gpio_out_warninglamp, gpio_out_beeper]:
         gpio.output(i, False)
 
