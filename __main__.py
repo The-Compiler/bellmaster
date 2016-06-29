@@ -33,7 +33,7 @@ def setupGpios():
 
 
 def cleanupGpios():
-    print 'Cleaning up GPIOs'
+    print 'Cleanung up GPIOs'
     for i in [gpio_out_warninglamp, gpio_out_beeper]:
         gpio.output(i, False)
 
@@ -172,7 +172,7 @@ cleanupGpios()
 gpio.add_event_detect(gpio_in_doorbell, gpio.FALLING, callback = evalDoorbell, bouncetime = 1)
 
 gpio.add_event_detect(gpio_in_lampenable, gpio.BOTH, callback = lambda channel: checkOutputEnable(channel, lampOutputController))
-gpio.add_event_detect(gpio_in_beeperenable, gpio.BOTH, callback = lambda channel: checkOutputEnable(channel, beeperOutputController))
+# gpio.add_event_detect(gpio_in_beeperenable, gpio.BOTH, callback = lambda channel: checkOutputEnable(channel, beeperOutputController))
 
 f = FritzFactory()
 connectToFritzbox(f)
